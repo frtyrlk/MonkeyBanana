@@ -21,3 +21,7 @@ npm-debug.log*
 
 # Vite
 *.local
+
+# Local agent skills (optional; remove these lines if you want them in the repo)
+.agents/
+skills-lock.json
