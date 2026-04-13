@@ -2,9 +2,7 @@
 
 Mobil uyumlu, tarayıcıda çalışan **kasa istifleme** ve **bonus toplama** oyunu. 100 seviye, PWA desteği, yerel kayıt (ilerleme, coin, ayarlar).
 
-[![CI](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/actions/workflows/ci.yml)
-
-> **Not:** İlk push’tan sonra `YOUR_USERNAME` ve `YOUR_REPO_NAME` değerlerini kendi GitHub yolunla değiştir; rozet yeşile döner.
+[![CI](https://github.com/frtyrlk/MonkeyBanana/actions/workflows/ci.yml/badge.svg)](https://github.com/frtyrlk/MonkeyBanana/actions/workflows/ci.yml)
 
 ## Özellikler
 
@@ -28,8 +26,8 @@ Mobil uyumlu, tarayıcıda çalışan **kasa istifleme** ve **bonus toplama** oy
 ## Hızlı başlangıç
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-cd YOUR_REPO_NAME
+git clone https://github.com/frtyrlk/MonkeyBanana.git
+cd MonkeyBanana
 npm install
 npm run dev
 ```
