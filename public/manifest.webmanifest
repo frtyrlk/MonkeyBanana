@@ -1,0 +1,10 @@
+{
+  "name": "Muza Ulaş!",
+  "short_name": "Muza Ulaş",
+  "description": "Maymun kasa — mobil oyun",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1a3d2e",
+  "theme_color": "#3d8b7a"
+}
