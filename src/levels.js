@@ -4,11 +4,11 @@ export function getLivesForLevel(i){
 }
 
 export const L=[
-/* 1  */ {t:"s",name:"Kalkış: İlk Dokunuş",goal:5,spd:1.75,w:0,r:0,bee:0,ni:0,alt:0,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Onboarding: zamanlama.",icon:"🎮",tutTip:"Arcade temeli: kasa kayarken tek dokunuşla bırak. İlk kasayı alttaki zemine hizala; taşma kırpılır, can gider."},
-/* 2  */ {t:"s",name:"Tempo: Hızlan",goal:6,spd:2.1,w:0,r:0,bee:0,ni:0,alt:0,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Refleks ısınıyor.",icon:"⚡",tutTip:"Hız arttı. Mükemmel hizaya yakın bırakınca combo ve bonus puan — riski buna göre ayarla."},
-/* 3  */ {t:"s",name:"Rüzgar Okuma",goal:7,spd:2.3,w:.35,r:0,bee:0,ni:0,alt:0,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Üstte 💨 yönünü izle.",icon:"🌬️",tutTip:"Rüzgar kasayı iter. Üstteki akışın yönüne göre erken veya geç bırak — arcade’de okumak kazanır."},
-/* 4  */ {t:"s",name:"Zikzak Giriş",goal:7,spd:2.35,w:0,r:0,bee:0,ni:0,alt:1,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Sağ-sol sıra.",icon:"↔️",tutTip:"Kasalar sırayla soldan ve sağdan gelir. Hangi taraftan geldiklerini say — zikzakta panik yok, ritim var."},
-/* 5  */ {t:"s",name:"Kaygan Zemin",goal:7,spd:2.45,w:0,r:.65,bee:0,ni:0,alt:0,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Yağmur + kayma.",icon:"🌧️",tutTip:"Bırakınca hafif kayma olur. Dar taşmada biraz tolerans bırak; tam kenarda can yakabilir."},
+/* 1  */ {t:"s",name:"İlk Dokunuş",goal:5,spd:1.6,w:0,r:0,bee:0,ni:0,alt:0,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,tut:true,desc:"Zamanlama + combo.",icon:"🎮"},
+/* 2  */ {t:"s",name:"Rüzgar ve Hız",goal:6,spd:2,w:.35,r:0,bee:0,ni:0,alt:0,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,tut:true,desc:"Rüzgar okuma.",icon:"🌬️"},
+/* 3  */ {t:"s",name:"Zikzak Yağmur",goal:7,spd:2.2,w:0,r:.5,bee:0,ni:0,alt:1,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,tut:true,desc:"Zikzak + meyveler.",icon:"🌧️"},
+/* 4  */ {t:"s",name:"Zikzak Giriş",goal:7,spd:2.35,w:0,r:0,bee:0,ni:0,alt:1,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Sağ-sol sıra.",icon:"↔️"},
+/* 5  */ {t:"s",name:"Kaygan Zemin",goal:7,spd:2.45,w:0,r:.65,bee:0,ni:0,alt:0,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Yağmur + kayma.",icon:"🌧️"},
 /* 6  */ {t:"s",name:"Arı Vızıltısı",goal:8,spd:2.7,w:0,r:0,bee:1,ni:0,alt:0,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Arı baskısı başladı!",icon:"🐝"},
 /* 7  */ {t:"s",name:"Gece Lambası",goal:8,spd:2.7,w:0,r:0,bee:0,ni:1,alt:0,qk:0,bu:0,nw:1,gh:0,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Karanlıkta odaklan!",icon:"🌙"},
 /* 8  */ {t:"s",name:"Hayalet Kasa",goal:8,spd:2.8,w:0,r:0,bee:0,ni:0,alt:0,qk:0,bu:0,nw:1,gh:.2,ic:0,bo:0,rot:0,bnc:0,mj:0,vi:0,mag:0,fog:0,dbl:0,shr:0,mir:0,grv:0,desc:"Bazıları görünmez olur!",icon:"👻"},

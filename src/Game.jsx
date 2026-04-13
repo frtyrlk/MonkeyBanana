@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import SFX from "./sfx";
-import { DEV_LS_KEY, TUTORIAL_LS_KEY, PF, safeT, safeB, safeX, safeR, btnStyle } from "./constants";
-import { TUTORIAL_SLIDES } from "./tutorial";
+import { DEV_LS_KEY, PF, safeT, safeB, safeX, safeR, btnStyle } from "./constants";
+import { TUT_SCRIPTS } from "./tutorial";
 import { L, getLivesForLevel } from "./levels";
 import { spawn, bst } from "./mechanics";
 import { calcStars, generateRewards, applyRewards, loadInventory, saveInventory, shouldShowReward, purchaseItem, SHOP_ITEMS } from "./rewards";
 
 export default function Game(){
   const cvRef=useRef(null),gs=useRef(null),bs=useRef(null);
-  const [scr,setScr]=useState(()=>{if(typeof window==='undefined')return 'menu';try{return localStorage.getItem(TUTORIAL_LS_KEY)==='1'?'menu':'tutorial';}catch(e){return 'menu';}}),[lv,setLv]=useState(0),[hud,setHud]=useState(""),[cmb,setCmb]=useState("");
-  const [tutSlide,setTutSlide]=useState(0),[onboardTip,setOnboardTip]=useState("");
+  const [scr,setScr]=useState('menu'),[lv,setLv]=useState(0),[hud,setHud]=useState(""),[cmb,setCmb]=useState("");
+  const [tutPaused,setTutPaused]=useState(false),[tutText,setTutText]=useState("");
+  const tutDone=useRef({});const tutPausedRef=useRef(false);
   const [beeW,setBeeW]=useState(false),[unlk,setUnlk]=useState(1),[msg,setMsg]=useState(""),[fMsg,setFMsg]=useState("");
   const [pIco,setPIco]=useState(""),[sOn,setSOn]=useState(true);
   const [lives,setLives]=useState(3);
@@ -21,7 +22,20 @@ export default function Game(){
   const md=useRef("s"),tm=useRef({}),vfx=useRef({redFlash:0,goldGlow:0,shockwave:null});
   const toggleDev=()=>{setDevMode(v=>{const n=!v;try{localStorage.setItem(DEV_LS_KEY,n?'1':'0');}catch(e){}return n;});};
   const sT=(k,fn,txt,ms=1200)=>{fn(txt);clearTimeout(tm.current[k]);tm.current[k]=setTimeout(()=>fn(""),ms);};
-  const finishTutorial=useCallback(()=>{try{localStorage.setItem(TUTORIAL_LS_KEY,'1');}catch(e){}SFX.init();SFX.click();setScr('menu');},[]);
+  const checkTut=useCallback((trigger)=>{
+    const s=gs.current;if(!s)return;const lvI=s.lv;const script=TUT_SCRIPTS[lvI];if(!script)return;
+    for(const step of script){
+      if(tutDone.current[step.id])continue;
+      let match=false;
+      if(step.trigger==='start'&&trigger==='start')match=true;
+      else if(step.trigger==='spawn'&&trigger==='spawn'&&s.cr===step.cr)match=true;
+      else if(step.trigger==='drop'&&trigger==='drop'&&s.cr===step.cr)match=true;
+      else if(step.trigger==='combo'&&trigger==='combo'&&s.combo>=step.n)match=true;
+      else if(step.trigger==='wind'&&trigger==='wind')match=true;
+      if(match){tutDone.current[step.id]=true;setTutText(step.text);setTutPaused(true);return;}
+    }
+  },[]);
+  const resumeTut=useCallback(()=>{SFX.click();setTutPaused(false);setTutText("");},[]);
 
   const triggerWin=useCallback((lvIdx,modeRef)=>{
     const mlv=L[lvIdx];const ml=mlv.lives??getLivesForLevel(lvIdx);
@@ -53,12 +67,12 @@ export default function Game(){
     const lv=L[l];
     const maxLives=lv.lives??getLivesForLevel(l);
     if(lv.t==="s")setLives(maxLives);
-    if(lv.t==="b"){setOnboardTip("");clearTimeout(tm.current.ot);md.current="b";setLv(l);setScr("play");setCmb("");setMsg("");setFMsg("");
+    if(lv.t==="b"){md.current="b";setLv(l);setScr("play");setCmb("");setMsg("");setFMsg("");
       const cv=cvRef.current;if(!cv)return;
       bs.current={W:cv.width,H:cv.height,L:lv,lv:l,alive:true,sc:0,combo:0,mx:0,
         monX:cv.width/2,mW:50,items:[],pts:[],timer:lv.time*60,maxT:lv.time*60,st:0,tX:cv.width/2};
       setHud(`🍌 0 / ${lv.goal}`);SFX.init();SFX.levelStart();return;}
-    setOnboardTip("");clearTimeout(tm.current.ot);md.current="s";setLv(l);setScr("play");setCmb("");setBeeW(false);setMsg("");setFMsg("");setPIco("");
+    md.current="s";setLv(l);setScr("play");setTutPaused(false);setTutText("");setCmb("");setBeeW(false);setMsg("");setFMsg("");setPIco("");
     const cv=cvRef.current;if(!cv)return;
     const GY=cv.height-45;let CH=Math.floor((GY-60)/lv.goal);CH=Math.max(16,Math.min(42,CH));
     const IW=Math.min(130,cv.width*.38)*lv.nw;
@@ -67,16 +81,17 @@ export default function Game(){
       wind:0,wTgt:0,wTm:0,bA:false,bT:0,bM:200,
       qX:0,qTm:0,qA:false,qC:0,mjTm:0,
       nWider:false,nSlow:false,nNoW:false,shield:false,wOvr:false,
-      maxLives,grvT:0,fogPts:[],comboShield:0,scoreMult:1,qY:0};
+      maxLives,grvT:0,fogPts:[],comboShield:0,scoreMult:1,qY:0,adCooldown:0};
     const inv=loadInventory();const bst2=inv.boosts||{};
     if(bst2.extraLife>0){const el=Math.min(bst2.extraLife,1);gs.current.maxLives+=el;setLives(prev=>prev+el);inv.boosts.extraLife--;saveInventory(inv);setInventory(inv);}
     if(bst2.startShield>0){gs.current.shield=true;inv.boosts.startShield--;saveInventory(inv);setInventory(inv);}
     if(bst2.slowStart>0){gs.current.nSlow=true;inv.boosts.slowStart--;saveInventory(inv);setInventory(inv);}
     if(bst2.windResist>0){gs.current.nNoW=true;inv.boosts.windResist--;saveInventory(inv);setInventory(inv);}
     if(lv.r){for(let i=0;i<70;i++)gs.current.rain.push({x:Math.random()*cv.width,y:Math.random()*cv.height,spd:4+Math.random()*5,len:8+Math.random()*14});}
-    setHud(`📦 0 / ${lv.goal}`);SFX.init();SFX.levelStart();spawn(gs.current);
-    if(lv.tutTip){setOnboardTip(lv.tutTip);clearTimeout(tm.current.ot);tm.current.ot=setTimeout(()=>setOnboardTip(""),14000);}
-  },[]);
+    setHud(`📦 0 / ${lv.goal}`);SFX.init();SFX.levelStart();
+    if(lv.tut){setTutPaused(false);setTutText("");setTimeout(()=>checkTut('start'),300);}
+    spawn(gs.current);
+  },[checkTut]);
 
   const handleStackMiss=useCallback(()=>{
     vfx.current.redFlash=20;
@@ -142,9 +157,12 @@ export default function Game(){
     if(m.bnc){m.bncVy=-4;m.bncOrig=m.y;m.bncing=true;SFX.bounce();}
     s.stack.push(m);s.cr=s.stack.length;setHud(`📦 ${s.cr} / ${s.L.goal}`);
     if(s.cr>=s.L.goal){s.alive=false;bst(s,s.W/2,m.y,'#ffd93d',40);setUnlk(p=>Math.max(p,s.lv+2));SFX.monkeyHappy();setTimeout(()=>triggerWin(s.lv,'s'),800);return;}
+    if(s.L.tut&&s.combo>=2)setTimeout(()=>checkTut('combo'),150);
+    if(s.L.tut)setTimeout(()=>checkTut('drop'),100);
     spawn(s);
+    if(s.L.tut)setTimeout(()=>checkTut('spawn'),200);
     if(s.L.dbl>0&&Math.random()<s.L.dbl&&s.mov){s.mov.spd*=1.7;s.mov.rushT=0;s.mov.rushM=85;sT('f',setFMsg,'⚡ ÇİFT!',600);SFX.doubleDrop();}
-  },[handleStackMiss]);
+  },[handleStackMiss,checkTut]);
 
   useEffect(()=>{
     const cv=cvRef.current;if(!cv)return;const c=cv.getContext('2d');let raf;
@@ -184,6 +202,7 @@ export default function Game(){
     };
 
     const sLoop=()=>{const s=gs.current;if(!s)return;const ni=s.L.ni;const lvI=s.lv;
+      if(tutPausedRef.current)return;
       const gr=c.createLinearGradient(0,0,0,cv.height);
       let skyDark=false;
       if(ni){gr.addColorStop(0,'#0a1628');gr.addColorStop(.5,'#162040');gr.addColorStop(1,'#1a3a2a');skyDark=true;}
@@ -199,7 +218,7 @@ export default function Game(){
       for(let layer=0;layer<2;layer++){c.fillStyle=(ni||skyDark)?`rgba(15,25,20,${.12+layer*.06})`:(lvI<20?`rgba(180,120,80,${.06+layer*.04})`:(lvI<80?`rgba(40,80,60,${.06+layer*.04})`:`rgba(20,30,50,${.08+layer*.05})`));
         c.beginPath();c.moveTo(-10,mtBase+layer*30);for(let x=0;x<=cv.width+10;x+=8){c.lineTo(x,mtBase+layer*30-Math.sin(x*0.012+mtTime+layer*2.5)*(22+layer*14)-Math.sin(x*0.006+mtTime*1.7)*(14+layer*8));}c.lineTo(cv.width+10,cv.height);c.lineTo(-10,cv.height);c.closePath();c.fill();}
 
-      if(s.L.w>0&&!s.wOvr){s.wTm++;if(s.wTm%60===0){s.wTgt=(Math.random()-.5)*2.5*s.L.w;if(s.wTm%120===0)SFX.wind();}s.wind+=(s.wTgt-s.wind)*.04;if(Math.random()<.005)s.wTgt=(Math.random()>.5?1:-1)*s.L.w*2;}
+      if(s.L.w>0&&!s.wOvr){s.wTm++;if(s.wTm%60===0){s.wTgt=(Math.random()-.5)*2.5*s.L.w;if(s.wTm%120===0)SFX.wind();}s.wind+=(s.wTgt-s.wind)*.04;if(Math.random()<.005)s.wTgt=(Math.random()>.5?1:-1)*s.L.w*2;if(s.L.tut&&Math.abs(s.wind)>.3&&s.wTm===60)checkTut('wind');}
       if(s.wOvr)s.wind*=.9;
 
       if(s.mov&&s.mov.ghost){s.mov.gt++;const ph=(s.mov.gt%90)/90;const was=s.mov.gv;s.mov.gv=ph<.55;if(!was&&s.mov.gv)SFX.ghostWhoosh();}
@@ -334,15 +353,14 @@ export default function Game(){
     const loop=()=>{c.clearRect(0,0,cv.width,cv.height);if(md.current==="b")bLoop();else sLoop();raf=requestAnimationFrame(loop);};
     raf=requestAnimationFrame(loop);
     return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',rsz);};
-  },[drop,handleStackMiss]);
+  },[drop,handleStackMiss,checkTut]);
 
-  useEffect(()=>{if(scr==='tutorial')setTutSlide(0);},[scr]);
-  useEffect(()=>{if(scr!=='play'){setOnboardTip("");clearTimeout(tm.current.ot);}},[scr]);
-
-  useEffect(()=>{const h=e=>{if(e.code==='Space'&&scr==='play'){e.preventDefault();if(md.current==='s')drop();}};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h);},[scr,drop]);
+  useEffect(()=>{tutPausedRef.current=tutPaused;},[tutPaused]);
+  useEffect(()=>{if(scr!=='play'){setTutPaused(false);setTutText("");}},[scr]);
 
   const ptrLocalX=useCallback(e=>{const cv=cvRef.current;if(!cv)return 0;const r=cv.getBoundingClientRect();return e.clientX-r.left;},[]);
   const hPtr=useCallback(e=>{e.preventDefault();if(scr!=='play')return;SFX.init();
+    if(tutPausedRef.current)return;
     if(md.current==='b'&&bs.current){bs.current.tX=ptrLocalX(e);try{e.currentTarget.setPointerCapture(e.pointerId);}catch(_){}}
     if(md.current==='s'&&gs.current&&gs.current.mov&&!(gs.current.adCooldown>0))drop();
   },[scr,drop,ptrLocalX]);
@@ -370,31 +388,17 @@ export default function Game(){
         {fMsg&&<div className="absolute left-1/2 -translate-x-1/2 z-10 px-2 py-0.5 rounded-full max-w-[90vw]" style={{top:'calc(env(safe-area-inset-top, 0px) + 3.5rem)',background:'rgba(0,0,0,.4)',fontFamily:"'Lilita One',cursive",fontSize:'clamp(10px,2.9vw,12px)',color:'#fff',pointerEvents:'none',textAlign:'center'}}>{fMsg}</div>}
         {msg&&<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 animate-pulse px-2" style={{fontFamily:"'Lilita One',cursive",fontSize:'clamp(18px,5vw,24px)',color:'#ff6b6b',textShadow:'0 0 10px rgba(255,107,107,.5)',pointerEvents:'none',textAlign:'center'}}>{msg}</div>}
         {beeW&&<div className="absolute left-1/2 -translate-x-1/2 z-10 animate-pulse" style={{bottom:'calc(env(safe-area-inset-bottom, 0px) + 3rem)',fontFamily:"'Lilita One',cursive",fontSize:'clamp(13px,3.8vw,17px)',color:'#ff1744',pointerEvents:'none'}}>🐝 ÇABUK!</div>}
-        {onboardTip&&<div className="absolute left-1/2 -translate-x-1/2 z-[15] w-[min(92vw,26rem)] px-3 py-2 rounded-xl flex flex-col gap-2" style={{bottom:'calc(env(safe-area-inset-bottom, 0px) + 4.5rem)',background:'rgba(0,30,40,.88)',border:'1px solid rgba(255,214,0,.35)',boxShadow:'0 4px 20px rgba(0,0,0,.4)'}}>
-          <p style={{fontFamily:"'Lilita One',cursive",fontSize:'clamp(10px,2.9vw,13px)',color:'#fff',margin:0,lineHeight:1.35,textAlign:'center'}}><span style={{color:'#ffd93d'}}>📋 Onboarding · </span>{onboardTip}</p>
-          <button type="button" className="self-center min-h-[40px] px-4 rounded-full touch-manipulation" style={{...btnStyle,fontSize:'clamp(11px,3vw,13px)',padding:'8px 20px',background:'linear-gradient(135deg,#455a64,#37474f)'}} onClick={e=>{e.stopPropagation();clearTimeout(tm.current.ot);setOnboardTip("");SFX.click();}}>Anladım</button>
-        </div>}
-        {(lv===0||(L[lv].t==='b'&&lv<=10))&&<p className="absolute left-1/2 -translate-x-1/2 z-10 text-center opacity-75 max-w-[70vw]" style={{bottom:'calc(env(safe-area-inset-bottom, 0px) + 3.35rem)',fontFamily:"'Lilita One',cursive",fontSize:'clamp(9px,2.5vw,11px)',color:'#fff',pointerEvents:'none',margin:0}}>{L[lv].t==='b'?'👆 Parmağını sürükle':'👆 Dokun = bırak'}</p>}
+        {tutPaused&&tutText&&(
+          <div className="absolute inset-0 z-[20] flex items-end justify-center" style={{background:'rgba(0,0,0,.45)',paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 2rem)'}}>
+            <div className="w-[min(92vw,26rem)] px-4 py-3 rounded-2xl flex flex-col gap-2" style={{background:'rgba(0,30,40,.92)',border:'1.5px solid rgba(255,214,0,.4)',boxShadow:'0 6px 30px rgba(0,0,0,.5)'}}>
+              <p style={{fontFamily:"'Lilita One',cursive",fontSize:'clamp(12px,3.4vw,15px)',color:'#fff',margin:0,lineHeight:1.45,textAlign:'center'}}>{tutText}</p>
+              <button type="button" className="self-center min-h-[48px] px-6 rounded-full touch-manipulation active:scale-95 transition-transform" style={{...btnStyle,fontSize:'clamp(13px,3.6vw,16px)',padding:'12px 28px'}} onClick={e=>{e.stopPropagation();resumeTut();}}>Anladım 👆</button>
+            </div>
+          </div>
+        )}
+        {L[lv].t==='b'&&lv<=10&&!tutPaused&&<p className="absolute left-1/2 -translate-x-1/2 z-10 text-center opacity-75 max-w-[70vw]" style={{bottom:'calc(env(safe-area-inset-bottom, 0px) + 3.35rem)',fontFamily:"'Lilita One',cursive",fontSize:'clamp(9px,2.5vw,11px)',color:'#fff',pointerEvents:'none',margin:0}}>👆 Parmağını sürükle</p>}
         <button type="button" className="absolute z-10 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full flex items-center justify-center" style={{bottom:safeB,right:'max(0.35rem, env(safe-area-inset-right, 0px))',background:'rgba(0,0,0,.35)',fontSize:16,border:'none',cursor:'pointer',color:'#fff',touchAction:'manipulation'}} onClick={e=>{e.stopPropagation();setSOn(SFX.toggle());}} aria-label={sOn?'Sesi kapat':'Sesi aç'}>{sOn?'🔊':'🔇'}</button>
       </>)}
-
-      {scr==='tutorial'&&(
-        <div className="absolute inset-0 z-[25] flex flex-col items-center justify-center px-4 py-6 overflow-y-auto" style={{background:'linear-gradient(165deg,#0d3d4a 0%,#1a5c40 45%,#0f2a22 100%)',paddingTop:'max(1rem, env(safe-area-inset-top))',paddingBottom:'max(1rem, env(safe-area-inset-bottom))'}}>
-          <div className="text-4xl mb-1">🕹️</div>
-          <h1 style={{fontFamily:"'Lilita One',cursive",fontSize:'clamp(1.15rem,4.5vw,1.45rem)',color:'#ffd93d',textAlign:'center',textShadow:'2px 2px 0 rgba(0,0,0,.25)',marginBottom:6}}>Arcade rehberi</h1>
-          <p style={{fontSize:'clamp(10px,2.8vw,12px)',color:'rgba(255,255,255,.55)',marginBottom:16,textAlign:'center',maxWidth:'22rem'}}>Refleks, risk ve okuma — cozy değil, challenge.</p>
-          <div className="w-full max-w-md rounded-2xl px-4 py-5 mb-4" style={{background:'rgba(0,0,0,.35)',border:'1px solid rgba(255,255,255,.1)'}}>
-            <div style={{fontFamily:"'Lilita One',cursive",fontSize:'clamp(14px,4vw,17px)',color:'#4FC3F7',marginBottom:8}}>{TUTORIAL_SLIDES[tutSlide].title}</div>
-            <p style={{fontSize:'clamp(12px,3.4vw,15px)',color:'#eceff1',lineHeight:1.5,margin:0}}>{TUTORIAL_SLIDES[tutSlide].body}</p>
-            <div className="flex justify-center gap-2 mt-4">{TUTORIAL_SLIDES.map((_,i)=>(<span key={i} className="rounded-full" style={{width:8,height:8,background:i===tutSlide?'#ffd93d':'rgba(255,255,255,.25)'}}/>))}</div>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-center w-full max-w-sm">
-            {tutSlide<TUTORIAL_SLIDES.length-1&&<button type="button" className="min-h-[48px] flex-1 min-w-[120px] touch-manipulation" onClick={()=>{SFX.click();setTutSlide(t=>t+1);}} style={{...btnStyle,fontSize:'clamp(13px,3.6vw,16px)',padding:'12px 20px'}}>İleri →</button>}
-            {tutSlide>=TUTORIAL_SLIDES.length-1&&<button type="button" className="min-h-[48px] flex-1 min-w-[140px] touch-manipulation" onClick={finishTutorial} style={{...btnStyle,fontSize:'clamp(13px,3.6vw,16px)',padding:'12px 20px'}}>Oyuna geç</button>}
-            <button type="button" className="min-h-[48px] min-w-[100px] touch-manipulation" onClick={finishTutorial} style={{...btnStyle,background:'linear-gradient(135deg,#546e7a,#37474f)',fontSize:'clamp(12px,3.2vw,14px)',padding:'12px 18px'}}>Atla</button>
-          </div>
-        </div>
-      )}
 
       {scr==='menu'&&(
         <div className="absolute inset-0 z-20 flex flex-col items-center overflow-y-auto overscroll-contain" style={{background:'radial-gradient(ellipse,rgba(78,173,213,.98),rgba(20,60,40,.99))',paddingTop:'max(0.75rem, env(safe-area-inset-top))',paddingBottom:'max(0.75rem, env(safe-area-inset-bottom))',paddingLeft:'max(0.5rem, env(safe-area-inset-left))',paddingRight:'max(0.5rem, env(safe-area-inset-right))'}}>
@@ -403,7 +407,6 @@ export default function Game(){
             <div style={{fontFamily:"'Lilita One',cursive",fontSize:'clamp(1.25rem, 5vw, 1.5rem)',color:'#ffd93d',textShadow:'2px 3px 0 rgba(0,0,0,.3)'}}>Muza Ulaş!</div>
             <p style={{color:'rgba(255,255,255,.5)',fontSize:'clamp(9px,2.6vw,11px)',marginTop:4}}>Mobil oyun · {L.length} level · 🪙 {inventory.coins}</p>
             <div className="flex items-center justify-center gap-3 mt-3 flex-wrap">
-              <button type="button" onClick={()=>{SFX.init();SFX.click();setScr("tutorial");}} className="min-h-[44px] touch-manipulation" style={{...btnStyle,fontSize:'clamp(11px,3vw,13px)',padding:'8px 18px',background:'linear-gradient(135deg,#00897B,#00695C)'}}>📖 Rehber</button>
               <button type="button" onClick={()=>{SFX.click();setScr("shop");}} className="min-h-[44px] touch-manipulation" style={{...btnStyle,fontSize:'clamp(11px,3vw,13px)',padding:'8px 18px',background:'linear-gradient(135deg,#7B1FA2,#4A148C)'}}>🏪 Dükkan</button>
               <label className="flex items-center justify-center gap-2 cursor-pointer select-none min-h-[44px] px-2" style={{fontFamily:"'Lilita One',cursive",fontSize:'clamp(10px,3vw,12px)',color:'rgba(255,255,255,.9)',touchAction:'manipulation'}}>
                 <input type="checkbox" checked={devMode} onChange={toggleDev} className="accent-amber-400 w-5 h-5 shrink-0"/>

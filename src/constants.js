@@ -21,7 +21,6 @@ export const NF=[
 ];
 
 export const DEV_LS_KEY='mbDevMode';
-export const TUTORIAL_LS_KEY='mbTutorialV1';
 
 export const safeT='max(0.5rem, env(safe-area-inset-top, 0px))';
 export const safeB='max(0.5rem, env(safe-area-inset-bottom, 0px))';
